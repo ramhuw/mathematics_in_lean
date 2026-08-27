@@ -42,10 +42,23 @@ theorem my_lemma4 :
     ∀ {x y ε : ℝ}, 0 < ε → ε ≤ 1 → |x| < ε → |y| < ε → |x * y| < ε := by
   intro x y ε epos ele1 xlt ylt
   calc
-    |x * y| = |x| * |y| := sorry
-    _ ≤ |x| * ε := sorry
-    _ < 1 * ε := sorry
-    _ = ε := sorry
+    |x * y| = |x| * |y| := by
+      apply abs_mul
+    _ ≤ |x| * ε := by
+      apply mul_le_mul
+      apply le_refl
+      exact Std.le_of_lt ylt
+      apply abs_nonneg
+      apply abs_nonneg
+    _ < 1 * ε := by
+      apply mul_lt_mul
+      calc
+        |x| < ε := by trivial
+        ε ≤ 1 := by trivial
+      apply le_refl
+      trivial
+      simp
+    _ = ε := by simp
 
 def FnUb (f : ℝ → ℝ) (a : ℝ) : Prop :=
   ∀ x, f x ≤ a
@@ -63,15 +76,37 @@ example (hfa : FnUb f a) (hgb : FnUb g b) : FnUb (fun x ↦ f x + g x) (a + b) :
   apply hfa
   apply hgb
 
-example (hfa : FnLb f a) (hgb : FnLb g b) : FnLb (fun x ↦ f x + g x) (a + b) :=
-  sorry
+example (hfa : FnLb f a) (hgb : FnLb g b) : FnLb (fun x ↦ f x + g x) (a + b) := by
+  intro x
+  simp
+  have h1 : a ≤ f x := by
+    exact hfa x
+  have h2 : b ≤ g x := hgb x
+  linarith [h1, h2]
 
 example (nnf : FnLb f 0) (nng : FnLb g 0) : FnLb (fun x ↦ f x * g x) 0 :=
-  sorry
+  by
+  intro x
+  simp
+  have h1 : 0 ≤ f x := nnf x
+  have h2 : 0 ≤ g x := nng x
+  rw [← mul_zero 0]
+  apply mul_le_mul
+  trivial
+  trivial
+  exact le_refl 0
+  trivial
 
 example (hfa : FnUb f a) (hgb : FnUb g b) (nng : FnLb g 0) (nna : 0 ≤ a) :
     FnUb (fun x ↦ f x * g x) (a * b) :=
-  sorry
+  by
+  intro x
+  simp
+  apply mul_le_mul
+  exact hfa x
+  exact hgb x
+  exact nng x
+  trivial
 
 end
 
@@ -104,10 +139,18 @@ example (mf : Monotone f) (mg : Monotone g) : Monotone fun x ↦ f x + g x :=
   fun _a _b aleb ↦ add_le_add (mf aleb) (mg aleb)
 
 example {c : ℝ} (mf : Monotone f) (nnc : 0 ≤ c) : Monotone fun x ↦ c * f x :=
-  sorry
+  by
+  intro x y hxy
+  simp
+  exact PosMulMono.mul_le_mul_of_nonneg_left nnc (mf hxy)
 
 example (mf : Monotone f) (mg : Monotone g) : Monotone fun x ↦ f (g x) :=
-  sorry
+  by
+  intro a b hab
+  simp
+  apply mf
+  apply mg
+  trivial
 
 def FnEven (f : ℝ → ℝ) : Prop :=
   ∀ x, f x = f (-x)
@@ -123,13 +166,23 @@ example (ef : FnEven f) (eg : FnEven g) : FnEven fun x ↦ f x + g x := by
 
 
 example (of : FnOdd f) (og : FnOdd g) : FnEven fun x ↦ f x * g x := by
-  sorry
+  intro x
+  simp
+  rw [of x, og x]
+  simp
+
 
 example (ef : FnEven f) (og : FnOdd g) : FnOdd fun x ↦ f x * g x := by
-  sorry
+  intro x
+  simp
+  rw [ef x, og x]
+  simp
 
 example (ef : FnEven f) (og : FnOdd g) : FnEven fun x ↦ f (g x) := by
-  sorry
+  intro x
+  simp
+  rw [og x, ef]
+  simp
 
 end
 
@@ -144,7 +197,8 @@ example : s ⊆ s := by
 theorem Subset.refl : s ⊆ s := fun _x xs ↦ xs
 
 theorem Subset.trans : r ⊆ s → s ⊆ t → r ⊆ t := by
-  sorry
+  intro a b
+  intro r
 
 end
 

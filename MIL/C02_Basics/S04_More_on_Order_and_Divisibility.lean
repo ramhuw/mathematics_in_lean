@@ -39,17 +39,86 @@ example : min a b = min b a := by
     apply min_le_left
 
 example : max a b = max b a := by
-  sorry
+  apply le_antisymm
+  apply max_le
+  apply le_max_right
+  apply le_max_left
+  apply max_le
+  apply le_max_right
+  apply le_max_left
+
+
+
 example : min (min a b) c = min a (min b c) := by
-  sorry
+  apply le_antisymm
+  apply le_min
+  calc
+    min (min a b) c ≤ min a b := by
+      apply min_le_left
+    _ ≤ a := by
+      apply min_le_left
+  apply le_min
+  calc
+    min (min a b) c ≤ min a b := by
+      apply min_le_left
+    _ ≤ b := by
+      apply min_le_right
+  apply min_le_right
+  apply le_min
+  apply le_min
+  apply min_le_left
+  calc
+    min a (min b c) ≤ min b c := by
+      apply min_le_right
+    _ ≤ b := by
+      apply min_le_left
+  calc
+    min a (min b c) ≤ min b c := by
+      apply min_le_right
+    _ ≤ c := by
+      apply min_le_right
+
 theorem aux : min a b + c ≤ min (a + c) (b + c) := by
-  sorry
+  apply le_min
+  apply add_le_add_left
+  apply min_le_left
+  apply add_le_add_left
+  apply min_le_right
+
 example : min a b + c = min (a + c) (b + c) := by
-  sorry
+  apply le_antisymm
+  apply le_min
+  apply add_le_add_left
+  apply min_le_left
+  apply add_le_add_left
+  apply min_le_right
+  have h : min (a + c) (b + c) - c ≤ min a b := by
+    apply le_min
+    calc
+      min (a+c) (b+c) - c ≤ a+c-c := by
+        apply sub_le_sub
+        apply min_le_left
+        apply le_refl
+      _ ≤ a := by linarith
+    calc
+      min (a+c) (b+c) - c ≤ b+c-c := by
+        apply sub_le_sub
+        apply min_le_right
+        apply le_refl
+      _ ≤ b := by linarith
+  linarith [h]
+
+
 #check (abs_add_le : ∀ a b : ℝ, |a + b| ≤ |a| + |b|)
 
-example : |a| - |b| ≤ |a - b| :=
-  sorry
+example : |a| - |b| ≤ |a - b| := by
+  have h : a = a - b + b := by
+    linarith
+  nth_rw 1 [h]
+  have g : |a - b + b| ≤ |a - b| + |b| := by
+    apply abs_add_le
+  linarith [g]
+
 end
 
 section
@@ -66,7 +135,15 @@ example : x ∣ x ^ 2 := by
   apply dvd_mul_left
 
 example (h : x ∣ w) : x ∣ y * (x * z) + x ^ 2 + w ^ 2 := by
-  sorry
+  apply dvd_add
+  apply dvd_add
+  apply dvd_mul_of_dvd_right
+  use z
+  use x
+  ring
+  apply dvd_pow
+  trivial
+  decide
 end
 
 section
@@ -78,7 +155,5 @@ variable (m n : ℕ)
 #check (Nat.lcm_zero_left n : Nat.lcm 0 n = 0)
 
 example : Nat.gcd m n = Nat.gcd n m := by
-  sorry
+  apply Nat.gcd_comm
 end
-
-
