@@ -35,7 +35,27 @@ theorem convergesTo_add {s t : ℕ → ℝ} {a b : ℝ}
   rcases cs (ε / 2) ε2pos with ⟨Ns, hs⟩
   rcases ct (ε / 2) ε2pos with ⟨Nt, ht⟩
   use max Ns Nt
-  sorry
+  intro n hn
+  calc
+    _ = |(s n - a) + (t n - b)| := by
+      ring_nf
+    _ <= |s n - a| + |t n - b| := by
+      exact abs_add_le (s n - a) (t n - b)
+    _ < ε / 2 + ε / 2 := by
+      have hss : n ≥ Ns := by
+        exact le_of_max_le_left hn
+      have htt : n ≥ Nt := by
+        exact le_of_max_le_right hn
+      have hs' : |s n - a| < ε / 2 := by
+        apply hs
+        trivial
+      have ht' : |t n - b| < ε / 2 := by
+        apply ht
+        trivial
+      linarith
+    _ = ε := by ring_nf
+
+
 
 theorem convergesTo_mul_const {s : ℕ → ℝ} {a : ℝ} (c : ℝ) (cs : ConvergesTo s a) :
     ConvergesTo (fun n ↦ c * s n) (c * a) := by
@@ -46,13 +66,49 @@ theorem convergesTo_mul_const {s : ℕ → ℝ} {a : ℝ} (c : ℝ) (cs : Conver
     rw [h]
     ring
   have acpos : 0 < |c| := abs_pos.mpr h
-  sorry
+  intro ε hε
+  let e := ε / |c|
+  have he : e > 0 := by
+    exact div_pos hε acpos
+  obtain ⟨N, hN⟩ := cs e he
+  use N
+  intro n hn
+  simp
+  calc
+    _ = |c * (s n - a)| := by ring_nf
+    _ = |c| * |s n - a| := by exact abs_mul c (s n - a)
+    _ < |c| * e := by
+      have f : |s n - a| < e := by
+        apply hN
+        trivial
+      exact (mul_lt_mul_iff_of_pos_left acpos).mpr (hN n hn)
+    _ = ε := by
+      unfold e
+      ring_nf
+      rw [mul_comm, ← mul_assoc]
+      have x : |c|⁻¹ * |c| = 1 := by
+        ring_nf
+        refine CommGroupWithZero.mul_inv_cancel |c| ?_
+        simp [h]
+      rw [x]
+      ring_nf
+
+
+
 
 theorem exists_abs_le_of_convergesTo {s : ℕ → ℝ} {a : ℝ} (cs : ConvergesTo s a) :
     ∃ N b, ∀ n, N ≤ n → |s n| < b := by
   rcases cs 1 zero_lt_one with ⟨N, h⟩
   use N, |a| + 1
-  sorry
+  intro n hn
+  calc
+    |s n| = |s n - a + a| := by ring_nf
+    _ <= |s n - a| + |a| := by exact abs_add_le (s n - a) a
+    _ < 1 + |a| := by
+      have g := h (n:=n) hn
+      linarith
+    _ = |a| + 1 := by linarith
+
 
 theorem aux {s t : ℕ → ℝ} {a : ℝ} (cs : ConvergesTo s a) (ct : ConvergesTo t 0) :
     ConvergesTo (fun n ↦ s n * t n) 0 := by
@@ -62,7 +118,28 @@ theorem aux {s t : ℕ → ℝ} {a : ℝ} (cs : ConvergesTo s a) (ct : Converges
   have Bpos : 0 < B := lt_of_le_of_lt (abs_nonneg _) (h₀ N₀ (le_refl _))
   have pos₀ : ε / B > 0 := div_pos εpos Bpos
   rcases ct _ pos₀ with ⟨N₁, h₁⟩
-  sorry
+  simp
+  use max N₀ N₁
+  intro n hn
+  simp at h₁
+  calc
+    _ <= B * |t n| := by
+      have x : N₀ ≤ n := by exact le_of_max_le_left hn
+      have y' : |s n| <= B := by
+        exact Std.le_of_lt (h₀ n x)
+      gcongr
+    _ < B * (ε / B) := by
+      have x : |t n| < ε / B := by
+        apply h₁
+        exact le_of_max_le_right hn
+      gcongr
+    _ = ε := by
+      field_simp
+      
+
+
+
+
 
 theorem convergesTo_mul {s t : ℕ → ℝ} {a b : ℝ}
       (cs : ConvergesTo s a) (ct : ConvergesTo t b) :
@@ -80,7 +157,8 @@ theorem convergesTo_unique {s : ℕ → ℝ} {a b : ℝ}
       (sa : ConvergesTo s a) (sb : ConvergesTo s b) :
     a = b := by
   by_contra abne
-  have : |a - b| > 0 := by sorry
+  have : |a - b| > 0 := by
+    exact abs_sub_pos.mpr abne
   let ε := |a - b| / 2
   have εpos : ε > 0 := by
     change |a - b| / 2 > 0
@@ -88,10 +166,30 @@ theorem convergesTo_unique {s : ℕ → ℝ} {a b : ℝ}
   rcases sa ε εpos with ⟨Na, hNa⟩
   rcases sb ε εpos with ⟨Nb, hNb⟩
   let N := max Na Nb
-  have absa : |s N - a| < ε := by sorry
-  have absb : |s N - b| < ε := by sorry
-  have : |a - b| < |a - b| := by sorry
-  exact lt_irrefl _ this
+  have absa : |s N - a| < ε := by
+    have x : N >= Na := by
+      apply?
+    apply hNa
+    trivial
+  have absb : |s N - b| < ε := by
+    apply hNb
+    apply?
+  have : |a - b| < |a - b| := by
+    calc
+      |a - b| = |a - s N + (s N - b)| := by
+        ring_nf
+      _ <= |a - s N| + |s N - b| := by
+        apply?
+      _ = |s N - a| + |s N - b| := by
+        have y:  |a - s N| = |s N - a| := by apply?
+        rw [y]
+      _ < ε + ε := by linarith
+      _ = 2 * ε := by linarith
+      _ = |a - b| := by
+        unfold ε
+        field_simp
+  apply?
+
 
 section
 variable {α : Type*} [LinearOrder α]
@@ -100,4 +198,3 @@ def ConvergesTo' (s : α → ℝ) (a : ℝ) :=
   ∀ ε > 0, ∃ N, ∀ n ≥ N, |s n - a| < ε
 
 end
-

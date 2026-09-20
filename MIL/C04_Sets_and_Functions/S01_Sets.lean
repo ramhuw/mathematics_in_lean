@@ -44,7 +44,17 @@ example : s ∩ (t ∪ u) ⊆ s ∩ t ∪ s ∩ u := by
   · right; exact ⟨xs, xu⟩
 
 example : s ∩ t ∪ s ∩ u ⊆ s ∩ (t ∪ u) := by
-  sorry
+  intro a ha
+  constructor
+  rcases ha with h1 | h2
+  exact mem_of_mem_inter_left h1
+  exact mem_of_mem_inter_left h2
+  rcases ha with h1 | h2
+  left
+  exact mem_of_mem_inter_right h1
+  right
+  exact mem_of_mem_inter_right h2
+
 example : (s \ t) \ u ⊆ s \ (t ∪ u) := by
   intro x xstu
   have xs : x ∈ s := xstu.1.1
@@ -64,7 +74,17 @@ example : (s \ t) \ u ⊆ s \ (t ∪ u) := by
   rintro (xt | xu) <;> contradiction
 
 example : s \ (t ∪ u) ⊆ (s \ t) \ u := by
-  sorry
+  intro a ha
+  constructor
+  constructor
+  exact mem_of_mem_inter_left ha
+  intro h
+  have h' : a ∈ t ∪ u := by exact mem_union_left u h
+  exact ha.2 h'
+  intro h
+  have h' : a ∈ t ∪ u := by exact mem_union_right t h
+  exact ha.2 h'
+
 example : s ∩ t = t ∩ s := by
   ext x
   simp only [mem_inter_iff]
@@ -83,18 +103,91 @@ example : s ∩ t = t ∩ s := by
   · rintro x ⟨xt, xs⟩; exact ⟨xs, xt⟩
 
 example : s ∩ t = t ∩ s :=
-    Subset.antisymm sorry sorry
+    by
+    apply Subset.antisymm
+    repeat
+    intro x hx
+    exact ⟨hx.2, hx.1⟩
+
 example : s ∩ (s ∪ t) = s := by
-  sorry
+  apply Subset.antisymm
+  exact inter_subset_left
+  intro x hx
+  constructor
+  assumption
+  exact mem_union_left t hx
 
 example : s ∪ s ∩ t = s := by
-  sorry
+  apply Subset.antisymm
+  intro x hx
+  rcases hx with h1 | h2
+  trivial
+  exact mem_of_mem_inter_left h2
+  intro x hx
+  left
+  trivial
 
 example : s \ t ∪ t = s ∪ t := by
-  sorry
+  apply Subset.antisymm
+  intro x hx
+  obtain h1 | h2 := hx
+  left
+  exact mem_of_mem_inter_left h1
+  right
+  trivial
+  intro x hx
+  have h := Classical.em (x ∈ t)
+  rcases h with h1 | h2
+  right
+  trivial
+  left
+  constructor
+  rcases hx with h3 | h4
+  trivial
+  trivial
+  trivial
 
 example : s \ t ∪ t \ s = (s ∪ t) \ (s ∩ t) := by
-  sorry
+  apply Subset.antisymm
+  intro x hx
+  rcases hx with h1 | h2
+  constructor
+  left
+  exact mem_of_mem_inter_left h1
+  have h' := h1.2
+  intro f
+  exact h' (mem_of_mem_inter_right f)
+  constructor
+  right
+  exact h2.1
+  intro h3
+  have h4 := h3.1
+  exact h2.2 h4
+  intro x hx
+  let h := Classical.em (x ∈ s \ t)
+  rcases h with h3 | h4
+  left
+  trivial
+  right
+  constructor
+  by_contra
+  have h : x ∉ s ∪ t := by
+    intro f
+    rcases f
+    apply h4
+    constructor
+    trivial
+    trivial
+    trivial
+  exact h hx.1
+  intro f
+  apply h4
+  constructor
+  trivial
+  intro g
+  have h : x ∈ (s ∩ t) := by
+    exact mem_inter f g
+  exact hx.2 h
 
 def evens : Set ℕ :=
   { n | Even n }
@@ -115,7 +208,52 @@ example (x : ℕ) : x ∈ (univ : Set ℕ) :=
   trivial
 
 example : { n | Nat.Prime n } ∩ { n | n > 2 } ⊆ { n | ¬Even n } := by
-  sorry
+  intro x hn h
+  obtain ⟨y, hy⟩ := h
+  have h' : 2 * y = x := by linarith
+  have h1 : x ∣ 2 * y := by
+    use 1
+    simp
+    trivial
+  simp at hn
+  have h := Nat.prime_iff.symm.mpr hn.1
+  unfold Prime at h
+  have h₀ : x ≠ 0 := by linarith
+  have h₁ : ¬ IsUnit x := by
+    simp
+    linarith
+  have h₂ := h.2.2 2 y h1
+  rcases h₂ with h3 | h4
+  have h4 : x <= 2 := by
+    apply Nat.le_of_dvd
+    decide
+    trivial
+  have h4' : ¬ x > 2 := by
+    exact Nat.not_lt.mpr h4
+  exact h4' hn.2
+  have h5 : y ≠ 0 := by
+    intro f
+    rw [f] at h'
+    simp at h'
+    symm at h'
+    exact h₀ h'
+  have g : x ≤ y := by
+    apply Nat.le_of_dvd
+    linarith
+    trivial
+  rw [hy] at g
+  have h6 : y <= 0 := by
+    linarith
+  have h7 : x <= 0 := by
+    linarith
+  have h8 : ¬ x > 0 :=
+    by exact Nat.not_lt.mpr h7
+  have h8' : x > 0 := by
+    linarith
+  exact h8 h8'
+
+
+
 
 #print Prime
 
@@ -151,10 +289,24 @@ section
 variable (ssubt : s ⊆ t)
 
 example (h₀ : ∀ x ∈ t, ¬Even x) (h₁ : ∀ x ∈ t, Prime x) : ∀ x ∈ s, ¬Even x ∧ Prime x := by
-  sorry
+  intro x hx
+  have h : x ∈ t := by
+    apply ssubt
+    trivial
+  constructor
+  apply h₀
+  trivial
+  apply h₁
+  trivial
+
 
 example (h : ∃ x ∈ s, ¬Even x ∧ Prime x) : ∃ x ∈ t, Prime x := by
-  sorry
+  rcases h with ⟨x, hx⟩
+  use x
+  constructor
+  apply ssubt
+  exact hx.1
+  exact hx.2.2
 
 end
 
@@ -193,7 +345,34 @@ example : (⋂ i, A i ∩ B i) = (⋂ i, A i) ∩ ⋂ i, B i := by
 
 
 example : (s ∪ ⋂ i, A i) = ⋂ i, A i ∪ s := by
-  sorry
+  apply Subset.antisymm
+  intro x hx
+  rcases hx with h1 | h2
+  rw [Set.mem_iInter]
+  intro i
+  right
+  trivial
+  rw [Set.mem_iInter]
+  intro i
+  rw [Set.mem_iInter] at h2
+  left
+  apply h2
+  intro x hx
+  rw [Set.mem_iInter] at hx
+  cases Classical.em (x ∈ s)
+  left
+  trivial
+  right
+  rw [Set.mem_iInter]
+  intro i
+  have hxx := hx i
+  cases hxx
+  trivial
+  false_or_by_contra
+  trivial
+
+
+
 
 def primes : Set ℕ :=
   { x | Nat.Prime x }
@@ -214,7 +393,19 @@ example : (⋂ p ∈ primes, { x | ¬p ∣ x }) ⊆ { x | x = 1 } := by
   apply Nat.exists_prime_and_dvd
 
 example : (⋃ p ∈ primes, { x | x ≤ p }) = univ := by
-  sorry
+  ext x
+  constructor
+  intro h
+  trivial
+  intro h
+  let ⟨p, hp⟩ := Nat.exists_infinite_primes x
+  rw [mem_iUnion₂]
+  use p
+  constructor
+  simp
+  exact hp.1
+  exact hp.2
+
 
 end
 
@@ -235,4 +426,3 @@ example : ⋂₀ s = ⋂ t ∈ s, t := by
   rfl
 
 end
-

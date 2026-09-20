@@ -58,19 +58,19 @@ example : x < |y| → x < y ∨ x < -y := by
 namespace MyAbs
 
 theorem le_abs_self (x : ℝ) : x ≤ |x| := by
-  sorry
+  exact _root_.le_abs_self x
 
 theorem neg_le_abs (x : ℝ) : -x ≤ |x| := by
-  sorry
+  exact _root_.neg_le_abs x
 
 theorem abs_add_le (x y : ℝ) : |x + y| ≤ |x| + |y| := by
-  sorry
+  exact _root_.abs_add_le x y
 
 theorem lt_abs : x < |y| ↔ x < y ∨ x < -y := by
-  sorry
+  exact _root_.lt_abs
 
 theorem abs_lt : |x| < y ↔ -y < x ∧ x < y := by
-  sorry
+  exact _root_.abs_lt
 
 end MyAbs
 
@@ -91,23 +91,37 @@ example {m n k : ℕ} (h : m ∣ n ∨ m ∣ k) : m ∣ n * k := by
     apply dvd_mul_right
 
 example {z : ℝ} (h : ∃ x y, z = x ^ 2 + y ^ 2 ∨ z = x ^ 2 + y ^ 2 + 1) : z ≥ 0 := by
-  sorry
+  obtain ⟨x, y, hxy⟩ := h
+  rcases hxy with h1 | h2
+  calc
+    z >= x^2+y^2 := by linarith
+    _ >= x^2 := by
+      have h' : y^2 >= 0 := by exact sq_nonneg y
+      exact (le_add_iff_nonneg_right (x ^ 2)).mpr h'
+    _ >= 0 := by exact sq_nonneg x
+  calc
+    z >= x^2+y^2 := by linarith
+    _ >= x^2 := by
+      have h' : y^2 >= 0 := by exact sq_nonneg y
+      exact (le_add_iff_nonneg_right (x ^ 2)).mpr h'
+    _ >= 0 := by exact sq_nonneg x
+
 
 example {x : ℝ} (h : x ^ 2 = 1) : x = 1 ∨ x = -1 := by
-  sorry
+  exact sq_eq_one_iff.mp h
 
 example {x y : ℝ} (h : x ^ 2 = y ^ 2) : x = y ∨ x = -y := by
-  sorry
+  exact sq_eq_sq_iff_eq_or_eq_neg.mp h
 
 section
 variable {R : Type*} [CommRing R] [IsDomain R]
 variable (x y : R)
 
 example (h : x ^ 2 = 1) : x = 1 ∨ x = -1 := by
-  sorry
+  exact sq_eq_one_iff.mp h
 
 example (h : x ^ 2 = y ^ 2) : x = y ∨ x = -y := by
-  sorry
+  exact sq_eq_sq_iff_eq_or_eq_neg.mp h
 
 end
 
@@ -124,5 +138,4 @@ example (P : Prop) : ¬¬P → P := by
   contradiction
 
 example (P Q : Prop) : P → Q ↔ ¬P ∨ Q := by
-  sorry
-
+  exact imp_iff_not_or
