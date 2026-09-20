@@ -46,9 +46,30 @@ theorem dvd_fac {i n : ℕ} (ipos : 0 < i) (ile : i ≤ n) : i ∣ fac n := by
   apply dvd_mul_right
 
 theorem pow_two_le_fac (n : ℕ) : 2 ^ (n - 1) ≤ fac n := by
-  rcases n with _ | n
-  · simp [fac]
-  sorry
+  match n with
+  | 0 => simp [fac]
+  | m + 1 =>
+      simp
+      have h := pow_two_le_fac m
+      unfold fac
+      rcases m with _ | k
+      decide
+      have g : 2 ^ (k + 1) = 2 ^ (k + 1 - 1) * 2 := by
+        exact Nat.pow_add_one 2 k
+      rw [g]
+      simp
+      rw [add_assoc, one_add_one_eq_two, mul_comm]
+      apply mul_le_mul
+      exact Nat.le_add_left 2 k
+      rw [Nat.add_sub_assoc] at h
+      simp at h
+      trivial
+      exact NeZero.one_le
+      exact Nat.zero_le (2 ^ k)
+      exact Nat.le_add_left 0 (k.add 1).succ
+
+
+
 section
 
 variable {α : Type*} (s : Finset ℕ) (f : ℕ → ℕ) (n : ℕ)
@@ -98,8 +119,26 @@ theorem sum_id (n : ℕ) : ∑ i ∈ range (n + 1), i = n * (n + 1) / 2 := by
   rw [Finset.sum_range_succ, mul_add 2, ← ih]
   ring
 
+theorem sum_sqr_aux (n : ℕ) :6 *  ∑ i ∈ range (n + 1), i ^ 2 = n * (n + 1) * (2 * n + 1):= by
+  match n with
+  | 0 => simp
+  | m + 1 =>
+      have h := sum_sqr_aux m
+      have g : 6 * ∑ i ∈ range (m + 1 + 1), i ^ 2 = 6 * ∑ i ∈ range (m + 1), i ^ 2 + 6 * (m + 1) ^ 2 := by
+        rw [sum_range_succ, mul_add, h]
+      rw [g, h]
+      ring
+
 theorem sum_sqr (n : ℕ) : ∑ i ∈ range (n + 1), i ^ 2 = n * (n + 1) * (2 * n + 1) / 6 := by
-  sorry
+  have h := sum_sqr_aux n
+  apply Nat.eq_div_of_mul_eq_right
+  decide
+  exact h
+
+
+
+
+
 end
 
 inductive MyNat where
@@ -134,9 +173,20 @@ theorem add_comm (m n : MyNat) : add m n = add n m := by
   rw [add, succ_add, ih]
 
 theorem add_assoc (m n k : MyNat) : add (add m n) k = add m (add n k) := by
-  sorry
+  match m with
+  | zero =>
+      rw [zero_add]
+      rw [zero_add]
+  | succ x =>
+      rw [succ_add]
+      rw [succ_add]
+      rw [succ_add]
+      simp
+      exact add_assoc x n k
+
 theorem mul_add (m n k : MyNat) : mul m (add n k) = add (mul m n) (mul m k) := by
   sorry
+
 theorem zero_mul (n : MyNat) : mul zero n = zero := by
   sorry
 theorem succ_mul (m n : MyNat) : mul (succ m) n = add (mul m n) n := by
