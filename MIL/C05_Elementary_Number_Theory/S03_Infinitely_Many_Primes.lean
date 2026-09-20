@@ -14,12 +14,12 @@ theorem two_le {m : ℕ} (h0 : m ≠ 0) (h1 : m ≠ 1) : 2 ≤ m := by
 
 example {m : ℕ} (h0 : m ≠ 0) (h1 : m ≠ 1) : 2 ≤ m := by
   by_contra h
-  push_neg at h
+  push Not at h
   interval_cases m <;> contradiction
 
 example {m : ℕ} (h0 : m ≠ 0) (h1 : m ≠ 1) : 2 ≤ m := by
   by_contra h
-  push_neg at h
+  push Not at h
   revert h0 h1
   revert h m
   decide
@@ -29,7 +29,7 @@ theorem exists_prime_factor {n : Nat} (h : 2 ≤ n) : ∃ p : Nat, p.Prime ∧ p
   · use n, np
   induction' n using Nat.strong_induction_on with n ih
   rw [Nat.prime_def_lt] at np
-  push_neg at np
+  push Not at np
   rcases np h with ⟨m, mltn, mdvdn, mne1⟩
   have : m ≠ 0 := by
     intro mz
@@ -42,21 +42,44 @@ theorem exists_prime_factor {n : Nat} (h : 2 ≤ n) : ∃ p : Nat, p.Prime ∧ p
     use p, pp
     apply pdvd.trans mdvdn
 
+lemma l {p n : ℕ} (g: p > 0) (h : p ≤ n) : p ∣ n.factorial := by
+    induction' n with d hd
+    have h0 : ¬ p ≤ 0 := by
+      push Not
+      exact g
+    contradiction
+    cases h
+    exact Dvd.intro d.factorial rfl
+    rw [Nat.factorial]
+    refine Nat.dvd_mul_left_of_dvd ?_ d.succ
+    apply hd
+    trivial
+
 theorem primes_infinite : ∀ n, ∃ p > n, Nat.Prime p := by
   intro n
-  have : 2 ≤ Nat.factorial n + 1 := by
-    sorry
-  rcases exists_prime_factor this with ⟨p, pp, pdvd⟩
+  have h (x : ℕ): 2 ≤ Nat.factorial x + 1 := by
+    induction' x with d hd
+    simp
+    rw [Nat.factorial, Nat.succ_mul]
+    omega
+  rcases exists_prime_factor (h n) with ⟨p, pp, pdvd⟩
   refine ⟨p, ?_, pp⟩
   show p > n
   by_contra ple
-  push_neg at ple
-  have : p ∣ Nat.factorial n := by
-    sorry
+  push Not at ple
+  have t : p ∣ Nat.factorial n := by
+    apply l
+    exact Nat.Prime.pos pp
+    trivial
   have : p ∣ 1 := by
-    sorry
+    have : 1 = n.factorial + 1 - n.factorial := by omega
+    rw [this]
+    exact Nat.dvd_sub pdvd t
   show False
-  sorry
+  simp at this
+  have f : p >= 2 := by
+    exact Nat.Prime.two_le pp
+  omega
 open Finset
 
 section
@@ -89,9 +112,14 @@ section
 variable {α : Type*} [DecidableEq α] (r s t : Finset α)
 
 example : (r ∪ s) ∩ (r ∪ t) = r ∪ s ∩ t := by
-  sorry
+  ext x
+  simp
+  tauto
+
 example : (r \ s) \ t = r \ (s ∪ t) := by
-  sorry
+  ext x
+  simp
+  tauto
 
 end
 
@@ -101,7 +129,7 @@ example (s : Finset ℕ) (n : ℕ) (h : n ∈ s) : n ∣ ∏ i ∈ s, i :=
 theorem _root_.Nat.Prime.eq_of_dvd_of_prime {p q : ℕ}
       (prime_p : Nat.Prime p) (prime_q : Nat.Prime q) (h : p ∣ q) :
     p = q := by
-  sorry
+  exact (Nat.prime_dvd_prime_iff_eq prime_p prime_q).mp h
 
 theorem mem_of_dvd_prod_primes {s : Finset ℕ} {p : ℕ} (prime_p : p.Prime) :
     (∀ n ∈ s, Nat.Prime n) → (p ∣ ∏ n ∈ s, n) → p ∈ s := by
@@ -118,7 +146,7 @@ example (s : Finset ℕ) (x : ℕ) : x ∈ s.filter Nat.Prime ↔ x ∈ s ∧ x.
 theorem primes_infinite' : ∀ s : Finset Nat, ∃ p, Nat.Prime p ∧ p ∉ s := by
   intro s
   by_contra h
-  push_neg at h
+  push Not at h
   set s' := s.filter Nat.Prime with s'_def
   have mem_s' : ∀ {n : ℕ}, n ∈ s' ↔ n.Prime := by
     intro n
@@ -170,14 +198,24 @@ theorem two_le_of_mod_4_eq_3 {n : ℕ} (h : n % 4 = 3) : 2 ≤ n := by
       norm_num at h
 
 theorem aux {m n : ℕ} (h₀ : m ∣ n) (h₁ : 2 ≤ m) (h₂ : m < n) : n / m ∣ n ∧ n / m < n := by
-  sorry
+  constructor
+  use m
+  exact Eq.symm (Nat.div_mul_cancel h₀)
+  refine (Nat.div_lt_iff_lt_mul ?_).mpr ?_
+  omega
+  calc
+    n = n * 1 := by rw [mul_one]
+    _ < n * m := by
+      refine Nat.mul_lt_mul_of_pos_left h₁ ?_
+      omega
+      
 theorem exists_prime_factor_mod_4_eq_3 {n : Nat} (h : n % 4 = 3) :
     ∃ p : Nat, p.Prime ∧ p ∣ n ∧ p % 4 = 3 := by
   by_cases np : n.Prime
   · use n
   induction' n using Nat.strong_induction_on with n ih
   rw [Nat.prime_def_lt] at np
-  push_neg at np
+  push Not at np
   rcases np (two_le_of_mod_4_eq_3 h) with ⟨m, mltn, mdvdn, mne1⟩
   have mge2 : 2 ≤ m := by
     apply two_le _ mne1
@@ -200,7 +238,7 @@ example (m n : ℕ) (s : Finset ℕ) (h : m ∈ erase s n) : m ≠ n ∧ m ∈ s
 
 theorem primes_mod_4_eq_3_infinite : ∀ n, ∃ p > n, Nat.Prime p ∧ p % 4 = 3 := by
   by_contra h
-  push_neg at h
+  push Not at h
   rcases h with ⟨n, hn⟩
   have : ∃ s : Finset Nat, ∀ p : ℕ, p.Prime ∧ p % 4 = 3 ↔ p ∈ s := by
     apply ex_finset_of_bounded
@@ -223,4 +261,3 @@ theorem primes_mod_4_eq_3_infinite : ∀ n, ∃ p > n, Nat.Prime p ∧ p % 4 = 3
   have : p = 3 := by
     sorry
   contradiction
-

@@ -185,12 +185,23 @@ theorem add_assoc (m n k : MyNat) : add (add m n) k = add m (add n k) := by
       exact add_assoc x n k
 
 theorem mul_add (m n k : MyNat) : mul m (add n k) = add (mul m n) (mul m k) := by
-  sorry
+  induction' n with d hd
+  rw [zero_add, mul, zero_add]
+  rw [succ_add, mul, mul, hd, add_assoc, add_comm (m.mul k) m, ← add_assoc]
 
 theorem zero_mul (n : MyNat) : mul zero n = zero := by
-  sorry
+  induction' n with d hd
+  rw [mul]
+  rw [mul, add, hd]
+
 theorem succ_mul (m n : MyNat) : mul (succ m) n = add (mul m n) n := by
-  sorry
+  induction' n with d hd
+  rw [mul, add, mul]
+  rw [mul, add, mul, hd, add, add_assoc, add_comm d m, ← add_assoc]
+
 theorem mul_comm (m n : MyNat) : mul m n = mul n m := by
-  sorry
+  induction' n with d hd
+  · rw [mul, zero_mul]
+  · rw [mul, succ_mul, hd]
+
 end MyNat
