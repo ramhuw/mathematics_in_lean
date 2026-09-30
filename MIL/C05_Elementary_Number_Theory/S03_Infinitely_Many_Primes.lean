@@ -139,7 +139,15 @@ theorem mem_of_dvd_prod_primes {s : Finset ℕ} {p : ℕ} (prime_p : p.Prime) :
     linarith [prime_p.two_le]
   simp [Finset.prod_insert ans, prime_p.dvd_mul] at h₀ h₁
   rw [mem_insert]
-  sorry
+  rcases h₁ with h11 | h12
+  left
+  refine Nat.Prime.eq_of_dvd_of_prime prime_p ?_ h11
+  exact h₀.1
+  right
+  apply ih
+  exact h₀.2
+  assumption
+
 example (s : Finset ℕ) (x : ℕ) : x ∈ s.filter Nat.Prime ↔ x ∈ s ∧ x.Prime :=
   mem_filter
 
@@ -153,15 +161,34 @@ theorem primes_infinite' : ∀ s : Finset Nat, ∃ p, Nat.Prime p ∧ p ∉ s :=
     simp [s'_def]
     apply h
   have : 2 ≤ (∏ i ∈ s', i) + 1 := by
-    sorry
+    have h₀ : ∀ x ∈ s', x >= 1 := by
+      intro x hx
+      rw [mem_filter] at hx
+      linarith [hx.2.two_le]
+    simp
+    apply one_le_prod
+    assumption
   rcases exists_prime_factor this with ⟨p, pp, pdvd⟩
   have : p ∣ ∏ i ∈ s', i := by
-    sorry
+    have h₀ := h p pp
+    apply dvd_prod_of_mem
+    refine mem_filter.mpr ?_
+    constructor
+    assumption
+    assumption
   have : p ∣ 1 := by
     convert Nat.dvd_sub pdvd this
     simp
   show False
-  sorry
+  have : p = 1 := by
+    exact Nat.eq_one_of_dvd_one this
+  have : p < 2 := by
+    linarith
+  have : p >= 2 := by
+    exact Nat.Prime.two_le pp
+  linarith
+
+
 theorem bounded_of_ex_finset (Q : ℕ → Prop) :
     (∃ s : Finset ℕ, ∀ k, Q k → k ∈ s) → ∃ n, ∀ k, Q k → k < n := by
   rintro ⟨s, hs⟩
@@ -208,7 +235,7 @@ theorem aux {m n : ℕ} (h₀ : m ∣ n) (h₁ : 2 ≤ m) (h₂ : m < n) : n / m
     _ < n * m := by
       refine Nat.mul_lt_mul_of_pos_left h₁ ?_
       omega
-      
+
 theorem exists_prime_factor_mod_4_eq_3 {n : Nat} (h : n % 4 = 3) :
     ∃ p : Nat, p.Prime ∧ p ∣ n ∧ p % 4 = 3 := by
   by_cases np : n.Prime
@@ -227,8 +254,41 @@ theorem exists_prime_factor_mod_4_eq_3 {n : Nat} (h : n % 4 = 3) :
     apply mod_4_eq_3_or_mod_4_eq_3
     rw [neq, h]
   rcases this with h1 | h1
-  . sorry
-  . sorry
+  . rcases Classical.em m.Prime
+    use m
+    obtain ⟨p, hp⟩ := by
+      apply ih
+      repeat
+      assumption
+    use p
+    constructor
+    exact hp.1
+    constructor
+    apply dvd_trans hp.2.1 mdvdn
+    exact hp.2.2
+  . rcases Classical.em (n / m).Prime
+    use (n / m)
+    constructor
+    assumption
+    constructor
+    exact Nat.div_dvd_of_dvd mdvdn
+    assumption
+    have : (n / m) < n := by
+      refine Nat.div_lt_self ?_ mge2
+      exact Nat.zero_lt_of_lt mltn
+    obtain ⟨p, hp⟩ := by
+      apply ih
+      apply this
+      assumption
+      assumption
+    use p
+    constructor
+    exact hp.1
+    constructor
+    apply dvd_trans
+    exact hp.2.1
+    exact Nat.div_dvd_of_dvd mdvdn
+    exact hp.2.2
 example (m n : ℕ) (s : Finset ℕ) (h : m ∈ erase s n) : m ≠ n ∧ m ∈ s := by
   rwa [mem_erase] at h
 
@@ -248,10 +308,14 @@ theorem primes_mod_4_eq_3_infinite : ∀ n, ∃ p > n, Nat.Prime p ∧ p % 4 = 3
     exact ⟨p, pltn, pp, p4⟩
   rcases this with ⟨s, hs⟩
   have h₁ : ((4 * ∏ i ∈ erase s 3, i) + 3) % 4 = 3 := by
-    sorry
+    rw [Nat.add_mod]
+    simp
   rcases exists_prime_factor_mod_4_eq_3 h₁ with ⟨p, pp, pdvd, p4eq⟩
   have ps : p ∈ s := by
-    sorry
+    rw [← hs]
+    constructor
+    assumption
+    assumption
   have pne3 : p ≠ 3 := by
     sorry
   have : p ∣ 4 * ∏ i ∈ erase s 3, i := by
