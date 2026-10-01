@@ -317,11 +317,49 @@ theorem primes_mod_4_eq_3_infinite : ∀ n, ∃ p > n, Nat.Prime p ∧ p % 4 = 3
     assumption
     assumption
   have pne3 : p ≠ 3 := by
-    sorry
+    by_contra
+    have h₀ : 3 ∣ 4 * ∏ i ∈ s.erase 3, i := by
+      rw [this] at pdvd
+      simp at pdvd
+      assumption
+    have h₁ : ¬ 3 ∣ 4 := by
+      decide
+    have h₁' (p a b : Nat) (hp : p.Prime) (hab : p ∣ a*b) (ha : ¬ p ∣ a) : p ∣ b := by
+      have h_or := hp.dvd_mul.mp hab
+      exact h_or.resolve_left ha
+    have h₁ : 3 ∣ ∏ i ∈ s.erase 3, i := by
+      apply h₁'
+      decide
+      exact h₀
+      assumption
+    have : ∃ i ∈ s.erase 3, 3 ∣ i := by
+      exact (Nat.prime_three.prime.dvd_finsetProd_iff id).mp h₁
+    obtain ⟨i, hi⟩ := this
+    have : 3 = i := by
+      have : i ∈ s := by
+        apply erase_subset
+        exact hi.1
+      have : i.Prime := by
+        apply ((hs i).mpr this).1
+      apply (prime_dvd_prime_iff_eq (Nat.prime_three.prime) this.prime).mp
+      exact hi.2
+    have h₂ : i ≠ 3 := by
+      apply Finset.ne_of_mem_erase
+      exact hi.1
+    symm at h₂
+    trivial
   have : p ∣ 4 * ∏ i ∈ erase s 3, i := by
-    sorry
+    have : p ∈ s.erase 3 := by
+      apply Finset.mem_erase.mpr
+      constructor
+      assumption
+      assumption
+    apply dvd_mul_of_dvd_right
+    apply Finset.dvd_prod_of_mem
+    assumption
   have : p ∣ 3 := by
-    sorry
+    exact (Nat.dvd_add_iff_right this).mpr pdvd
   have : p = 3 := by
-    sorry
+    apply (prime_dvd_prime_iff_eq (pp.prime) (Nat.prime_three.prime)).mp
+    assumption
   contradiction
