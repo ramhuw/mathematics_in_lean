@@ -107,7 +107,15 @@ theorem fib_add' : ∀ m n, fib (m + n + 1) = fib m * fib n + fib (m + 1) * fib 
     ring
 
 example (n : ℕ): (fib n) ^ 2 + (fib (n + 1)) ^ 2 = fib (2 * n + 1) := by
-  sorry
+  symm
+  calc
+  _ = fib (n + n + 1) := by ring_nf
+  _= fib n * fib n + fib (n + 1) * fib (n + 1) := by
+    apply fib_add'
+  _ = (fib n) ^ 2 + (fib (n + 1)) ^ 2 := by ring_nf
+
+
+
 #check (@Nat.not_prime_iff_exists_dvd_lt :
   ∀ {n : ℕ}, 2 ≤ n → (¬Nat.Prime n ↔ ∃ m, m ∣ n ∧ 2 ≤ m ∧ m < n))
 

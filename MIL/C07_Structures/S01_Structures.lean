@@ -209,4 +209,3 @@ variable (s : StdSimplex)
 #check s.2
 
 end
-
