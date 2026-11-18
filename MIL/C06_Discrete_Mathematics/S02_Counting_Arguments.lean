@@ -91,11 +91,38 @@ example (n : ℕ) : #(triangle n) = (n + 1) * n / 2 := by
   let turn (p : ℕ × ℕ) : ℕ × ℕ := (n - 1 - p.1, n - p.2)
   calc 2 * #(triangle n)
       = #(triangle n) + #(triangle n) := by
-          sorry
+          exact Nat.two_mul #(triangle n)
     _ = #(triangle n) + #(triangle n |>.image turn) := by
-          sorry
+          have h : Set.InjOn turn (triangle n) := by
+            unfold Set.InjOn
+            intro x hx y hy hxy
+            unfold turn at hxy
+            injection hxy with h1 h2
+            unfold triangle at hx
+            simp at hx
+            unfold triangle at hy
+            simp at hy
+            have hx' : x.1 ≤ n - 1 := by omega
+            have hy' : y.1 ≤ n - 1 := by omega
+            ext
+            omega
+            omega
+          rw [card_image_of_injOn h]
     _ = #(range n ×ˢ range (n + 1)) := by
-          sorry
+          have h : Disjoint (triangle n) (image turn (triangle n)) := by
+            unfold Disjoint
+            intro x hx hx'
+            intro a ha
+            have ha1 := hx ha
+            unfold triangle at ha1
+            simp at ha1
+            have ha2 := hx' ha
+            unfold triangle at ha2
+            simp at ha2
+            obtain ⟨b, c, hbc⟩ := ha2
+            unfold turn at hbc
+            exfalso
+
     _ = (n + 1) * n := by
           sorry
 
