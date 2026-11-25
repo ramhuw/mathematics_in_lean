@@ -61,12 +61,28 @@ theorem map_map' (f : α → β) (g : β → γ) (as : List α) :
   . rfl
   . simp [map, ih]
 
-def reverse : List α → List α := sorry
+def reverse : List α → List α :=
+  fun x ↦
+  match x with
+  | nil => nil
+  | cons x xs => (reverse xs) ++ [x]
 
 theorem reverse_append (as bs : List α) : reverse (as ++ bs) = reverse bs ++ reverse as := by
-  sorry
+  induction' as with heada taila ha
+  simp
+  simp [reverse]
+  rw [cons_append]
+  simp [reverse]
+  rw [ha]
+  rw [append_assoc]
 
-theorem reverse_reverse (as : List α) : reverse (reverse as) = as := by sorry
+theorem reverse_reverse (as : List α) : reverse (reverse as) = as := by
+  induction' as with heada taila ha
+  simp [reverse]
+  simp [reverse]
+  rw [reverse_append]
+  rw [ha]
+  simp [reverse]
 
 end MyListSpace3
 
@@ -97,7 +113,14 @@ theorem size_le : ∀ t : BinTree, size t ≤ 2^depth t - 1
           have : 0 < 2 ^ max l.depth r.depth := by simp
           omega
 
-theorem depth_le_size : ∀ t : BinTree, depth t ≤ size t := by sorry
+theorem depth_le_size : ∀ t : BinTree, depth t ≤ size t := by
+  intro t
+  induction' t with a b c d
+  simp [depth]
+  simp [depth, size]
+  constructor
+  omega
+  omega
 
 def flip : BinTree → BinTree := sorry
 
